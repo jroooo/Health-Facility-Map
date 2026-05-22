@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Health Facility Mapping System - Tacloban City</title>
+    
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <header class="site-header">
+        <div class="header-brand">
+            <div class="site-logo"><i class="fa-solid fa-map-location-dot"></i></div>
+            <div>
+                <p class="eyebrow">Tacloban City GIS</p>
+                <h1>Hospital Facility Mapping System</h1>
+            </div>
+        </div>
+    </header>
+
+    <main class="page-frame">
+        <div class="app-container">
+            <aside class="sidebar-left">
+                <div class="panel-section" id="search">
+                    <h2 class="panel-title">SEARCH LOCATION</h2>
+                    <div class="search-box">
+                        <input type="text" id="searchInput" placeholder="Search hospital...">
+                        <button onclick="searchLocation()"><i class="fa-solid fa-magnifying-glass"></i></button>
+                    </div>
+                    <div id="suggestions" class="suggestions-container"></div>
+                </div>
+
+                <div class="panel-section" id="layers">
+                    <h2 class="panel-title">LAYERS</h2>
+                    <div class="layer-control-list">
+                        <label class="layer-item">
+                            <input type="checkbox" id="layer-all" checked onchange="toggleAllLayers(this)">
+                            <span class="custom-checkbox"></span>
+                            <span class="layer-label">All Layers</span>
+                        </label>
+                        <hr class="layer-divider">
+                        <label class="layer-item">
+                            <input type="checkbox" class="layer-toggle" value="Public Hospital" checked onchange="filterMapLayers()">
+                            <span class="custom-checkbox public-hospital-cb"></span>
+                            <span class="layer-label"><i class="fa-solid fa-hospital icon-pub"></i> Public Hospitals</span>
+                        </label>
+                        <label class="layer-item">
+                            <input type="checkbox" class="layer-toggle" value="Private Hospital" checked onchange="filterMapLayers()">
+                            <span class="custom-checkbox private-hospital-cb"></span>
+                            <span class="layer-label"><i class="fa-solid fa-hospital icon-priv"></i> Private Hospitals</span>
+                        </label>
+                    </div>
+                </div>
+
+                <div class="panel-section legend-section">
+                    <h2 class="panel-title">LEGEND</h2>
+                    <div class="legend-list">
+                        <div class="legend-item"><span class="dot dot-pub-hospital"></span> Public Hospital</div>
+                        <div class="legend-item"><span class="dot dot-priv-hospital"></span> Private Hospital</div>
+                    </div>
+                </div>
+            </aside>
+
+            <main class="map-wrapper" style="position: relative;">
+                <div id="map"></div>
+
+                <div class="custom-layer-control" id="customLayerControl">
+                    <button class="layer-trigger-btn" onclick="toggleLayerMenu(event)" title="Change Base Map Style">
+                        <i class="fa-solid fa-layer-group"></i>
+                    </button>
+                    
+                    <div class="layer-popup-menu" id="layerPopupMenu">
+                        <div class="layer-option active" id="optOSM" onclick="switchBaseLayer('osm')">
+                            <i class="fa-solid fa-map"></i>
+                            <span>Streets</span>
+                        </div>
+                        <div class="layer-option" id="optSatellite" onclick="switchBaseLayer('satellite')">
+                            <i class="fa-solid fa-earth-americas"></i>
+                            <span>Satellite</span>
+                        </div>
+                    </div>
+                </div>
+            </main>
+
+            <aside class="sidebar-right">
+                <div class="brand-header">
+                    <div class="brand-logo">
+                        <i class="fa-solid fa-shield-halved"></i>
+                    </div>
+                    <div class="brand-text">
+                        <h1>TACLOBAN CITY</h1>
+                        <p>HEALTH FACILITY MAP</p>
+                    </div>
+                </div>
+
+                <div class="right-content" id="defaultRightContent">
+                    <h3 class="info-title">HOSPITAL INFORMATION</h3>
+                    <p class="info-text">
+                        This interactive map shows Hospital facilities (Public and Private) within Tacloban City. Click on any marker to view comprehensive facility insights, dynamic images, and contact information.
+                    </p>
+
+                    <h3 class="info-title">FEATURES</h3>
+                    <ul class="feature-list">
+                        <li><i class="fa-solid fa-circle-check"></i> Dynamic Info Sidebar</li>
+                        <li><i class="fa-solid fa-circle-check"></i> Search Facility Location</li>
+                        <li><i class="fa-solid fa-circle-check"></i> Interactive Layer Control</li>
+                        <li><i class="fa-solid fa-circle-check"></i> Interactive Popups & Metadata</li>
+                    </ul>
+                </div>
+
+                <div class="right-content" id="activeDetailsPanel" style="display: none;">
+                    <button class="close-panel-btn" onclick="closeDetailsPanel()"><i class="fa-solid fa-arrow-left"></i> Back to Info</button>
+                    
+                    <div class="facility-image-wrapper">
+                        <img id="facilityImage" src="" alt="Facility Image">
+                    </div>
+
+                    <h2 id="facilityName" class="facility-main-title">Facility Name</h2>
+                    <div class="facility-meta-row">
+                        <span id="facilityTypeTag" class="popup-tag">Public Hospital</span>
+                        <span id="facilityRating" class="rating-badge"><i class="fa-solid fa-star"></i> 0.0</span>
+                    </div>
+
+                    <div class="facility-details-block">
+                        <div class="detail-item">
+                            <i class="fa-solid fa-clock icon-blue"></i>
+                            <div>
+                                <h4>Hours</h4>
+                                <p id="facilityHours">Open 24 hours</p>
+                            </div>
+                        </div>
+                        <div class="detail-item">
+                            <i class="fa-solid fa-map-marker-alt icon-blue"></i>
+                            <div>
+                                <h4>Description</h4>
+                                <p id="facilityDescription">Address details...</p>
+                            </div>
+                        </div>
+                        <div class="detail-item">
+                            <i class="fa-solid fa-phone icon-blue"></i>
+                            <div>
+                                <h4>Phone Number</h4>
+                                <p id="facilityPhone">Not Available</p>
+                            </div>
+                        </div>
+                        <div class="detail-item">
+                            <i class="fa-solid fa-globe icon-blue"></i>
+                            <div>
+                                <h4>Website</h4>
+                                <a id="facilityWebsite" href="#" target="_blank">Visit Site</a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <footer class="app-footer">
+                    <p>© 2026 All Rights Reserved.</p>
+                </footer>
+            </aside>
+        </div>
+    </main>
+
+    <footer class="site-footer">
+        <div class="footer-inner">
+            <p>© 2026 Tacloban City Health Facility Map. Designed for better access to healthcare services.</p>
+        </div>
+    </footer>
+
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script src="script.js"></script>
+</body>
+</html>
